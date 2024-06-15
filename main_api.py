@@ -226,11 +226,253 @@
 # Улучшенные прямоугольники_________________________________________
 
 
+# from fastapi import FastAPI, File, UploadFile
+# from fastapi.responses import JSONResponse
+# from fastapi.middleware.cors import CORSMiddleware
+# import torch
+# from transformers import ViTForImageClassification, ViTImageProcessor
+# from PIL import Image
+# import io
+# import cv2
+# import numpy as np
+# import base64
+# import uvicorn
+# import random
+
+# # Инициализация FastAPI
+# app = FastAPI()
+
+# # Настройка CORS (если необходимо)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+# # Функция для установки всех seeds
+# def set_seed(seed):
+#     random.seed(seed)
+#     np.random.seed(seed)
+#     torch.manual_seed(seed)
+#     if torch.cuda.is_available():
+#         torch.cuda.manual_seed_all(seed)
+
+# # Устанавливаем фиксированный seed
+# set_seed(42)
+
+# # Загрузка модели и feature extractor
+# model_name = 'th041/vit-weld-classify'
+# feature_extractor = ViTImageProcessor.from_pretrained(model_name)
+# model = ViTForImageClassification.from_pretrained(model_name)
+
+# # Замените классификатор на новый с правильным количеством классов
+# num_classes = 2  # Замените на актуальное количество классов
+# model.classifier = torch.nn.Linear(model.config.hidden_size, num_classes)
+
+# # Переключаем модель в режим оценки
+# model.eval()
+
+# # Подготовка изображения
+# def prepare_image(image):
+#     inputs = feature_extractor(images=image, return_tensors="pt")
+#     return inputs
+
+# # Функция для классификации изображений
+# def classify_image(image):
+#     inputs = prepare_image(image)
+#     with torch.no_grad():
+#         outputs = model(**inputs)
+#     logits = outputs.logits
+#     predicted_class_idx = logits.argmax(-1).item()
+#     class_names = {1: "Дефект отсутствует", 0: "Дефект есть"}
+#     return class_names.get(predicted_class_idx, "Неизвестно")
+
+# # Функция для выделения шва с помощью OpenCV
+# def detect_weld(image: Image.Image):
+#     open_cv_image = np.array(image)
+#     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2GRAY)
+
+#     # Увеличим контрастность с помощью CLAHE
+#     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+#     gray = clahe.apply(gray)
+
+#     # Применим размытие для удаления шумов
+#     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+#     # Используем метод Canny для выделения краев
+#     edges = cv2.Canny(blurred, 50, 150)
+
+#     # Применим морфологические операции для удаления мелких шумов
+#     kernel = np.ones((5, 5), np.uint8)
+#     closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+
+#     # Найдем контуры
+#     contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+#     if contours:
+#         contour = max(contours, key=cv2.contourArea)
+#         x, y, w, h = cv2.boundingRect(contour)
+#         cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+#         cropped_image = open_cv_image[y:y + h, x:x + w]
+#         return cropped_image, open_cv_image
+#     else:
+#         return open_cv_image, open_cv_image
+
+# @app.post("/")
+# async def upload_file(file: UploadFile = File(...)):
+#     contents = await file.read()
+#     image = Image.open(io.BytesIO(contents)).convert("RGB")
+
+#     cropped_image, annotated_image = detect_weld(image)
+#     result = classify_image(cropped_image)
+
+#     _, buffer = cv2.imencode('.jpg', annotated_image)
+#     annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
+
+#     return JSONResponse(content={"result": result, "annotated_image": annotated_image_encoded})
+
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# from fastapi import FastAPI, File, UploadFile
+# from fastapi.responses import JSONResponse
+# from fastapi.middleware.cors import CORSMiddleware
+# import torch
+# from transformers import ViTForImageClassification, ViTImageProcessor
+# from PIL import Image
+# import io
+# import cv2
+# import numpy as np
+# import base64
+# import uvicorn
+# import random
+# from typing import List
+
+# # Инициализация FastAPI
+# app = FastAPI()
+
+# # Настройка CORS (если необходимо)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+# # Функция для установки всех seeds
+# def set_seed(seed):
+#     random.seed(seed)
+#     np.random.seed(seed)
+#     torch.manual_seed(seed)
+#     if torch.cuda.is_available():
+#         torch.cuda.manual_seed_all(seed)
+
+# # Устанавливаем фиксированный seed
+# set_seed(42)
+
+# # Загрузка модели и feature extractor
+# model_name = 'th041/vit-weld-classify'
+# feature_extractor = ViTImageProcessor.from_pretrained(model_name)
+# model = ViTForImageClassification.from_pretrained(model_name)
+
+# # Замените классификатор на новый с правильным количеством классов
+# num_classes = 2  # Замените на актуальное количество классов
+# model.classifier = torch.nn.Linear(model.config.hidden_size, num_classes)
+
+# # Переключаем модель в режим оценки
+# model.eval()
+
+# # Подготовка изображения
+# def prepare_image(image):
+#     inputs = feature_extractor(images=image, return_tensors="pt")
+#     return inputs
+
+# # Функция для классификации изображений
+# def classify_image(image):
+#     inputs = prepare_image(image)
+#     with torch.no_grad():
+#         outputs = model(**inputs)
+#     logits = outputs.logits
+#     predicted_class_idx = logits.argmax(-1).item()
+#     class_names = {1: "Дефект отсутствует", 0: "Дефект есть"}
+#     return class_names.get(predicted_class_idx, "Неизвестно")
+
+# # Функция для выделения шва с помощью OpenCV
+# def detect_weld(image: Image.Image):
+#     open_cv_image = np.array(image)
+#     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2GRAY)
+#     _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
+#     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+#     if contours:
+#         contour = max(contours, key=cv2.contourArea)
+#         x, y, w, h = cv2.boundingRect(contour)
+#         cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+#         cropped_image = open_cv_image[y:y + h, x:x + w]
+#         return cropped_image, open_cv_image
+#     else:
+#         return open_cv_image, open_cv_image
+
+# @app.post("/")
+# async def upload_files(files: List[UploadFile] = File(...)):
+#     results = []
+
+#     for file in files:
+#         contents = await file.read()
+#         image = Image.open(io.BytesIO(contents)).convert("RGB")
+        
+#         cropped_image, annotated_image = detect_weld(image)
+#         result = classify_image(cropped_image)
+        
+#         _, buffer = cv2.imencode('.jpg', annotated_image)
+#         annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
+        
+#         results.append({"result": result, "annotated_image": annotated_image_encoded})
+
+#     return JSONResponse(content=results)
+
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import torch
-from transformers import ViTForImageClassification, ViTImageProcessor
 from PIL import Image
 import io
 import cv2
@@ -238,6 +480,8 @@ import numpy as np
 import base64
 import uvicorn
 import random
+from typing import List
+from ultralytics import YOLO
 
 # Инициализация FastAPI
 app = FastAPI()
@@ -262,76 +506,155 @@ def set_seed(seed):
 # Устанавливаем фиксированный seed
 set_seed(42)
 
-# Загрузка модели и feature extractor
-model_name = 'th041/vit-weld-classify'
-feature_extractor = ViTImageProcessor.from_pretrained(model_name)
-model = ViTForImageClassification.from_pretrained(model_name)
+# Определение устройства
+device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 
-# Замените классификатор на новый с правильным количеством классов
-num_classes = 2  # Замените на актуальное количество классов
-model.classifier = torch.nn.Linear(model.config.hidden_size, num_classes)
+# Загрузка обученной модели
+model = YOLO('modelTrained/best.pt')
+model.to(device)  # Перенос модели на устройство
 
-# Переключаем модель в режим оценки
-model.eval()
-
-# Подготовка изображения
+# Функция для подготовки изображения
 def prepare_image(image):
-    inputs = feature_extractor(images=image, return_tensors="pt")
-    return inputs
+    return np.array(image)
 
 # Функция для классификации изображений
 def classify_image(image):
-    inputs = prepare_image(image)
-    with torch.no_grad():
-        outputs = model(**inputs)
-    logits = outputs.logits
-    predicted_class_idx = logits.argmax(-1).item()
-    class_names = {1: "Дефект отсутствует", 0: "Дефект есть"}
-    return class_names.get(predicted_class_idx, "Неизвестно")
+    image = image.to(device)  # Перенос изображения на устройство
+    results = model(image)
+    return results
 
 # Функция для выделения шва с помощью OpenCV
 def detect_weld(image: Image.Image):
     open_cv_image = np.array(image)
     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2GRAY)
-
-    # Увеличим контрастность с помощью CLAHE
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    gray = clahe.apply(gray)
-
-    # Применим размытие для удаления шумов
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-
-    # Используем метод Canny для выделения краев
-    edges = cv2.Canny(blurred, 50, 150)
-
-    # Применим морфологические операции для удаления мелких шумов
-    kernel = np.ones((5, 5), np.uint8)
-    closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
-
-    # Найдем контуры
-    contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if contours:
         contour = max(contours, key=cv2.contourArea)
         x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
         cropped_image = open_cv_image[y:y + h, x:x + w]
         return cropped_image, open_cv_image
     else:
         return open_cv_image, open_cv_image
 
 @app.post("/")
-async def upload_file(file: UploadFile = File(...)):
-    contents = await file.read()
-    image = Image.open(io.BytesIO(contents)).convert("RGB")
+async def upload_files(files: List[UploadFile] = File(...)):
+    results = []
 
-    cropped_image, annotated_image = detect_weld(image)
-    result = classify_image(cropped_image)
+    for file in files:
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        
+        cropped_image, annotated_image = detect_weld(image)
+        result = classify_image(cropped_image)
+        
+        _, buffer = cv2.imencode('.jpg', annotated_image)
+        annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
+        
+        results.append({"result": result, "annotated_image": annotated_image_encoded})
 
-    _, buffer = cv2.imencode('.jpg', annotated_image)
-    annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
-
-    return JSONResponse(content={"result": result, "annotated_image": annotated_image_encoded})
+    return JSONResponse(content=results)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
+
+
+
+
+# from fastapi import FastAPI, File, UploadFile
+# from fastapi.responses import JSONResponse
+# from fastapi.middleware.cors import CORSMiddleware
+# import torch
+# from PIL import Image
+# import io
+# import cv2
+# import numpy as np
+# import base64
+# import uvicorn
+# import random
+# from typing import List
+# from ultralytics import YOLO
+
+# app = FastAPI()
+
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+# device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
+# model = YOLO('modelTrained/best.pt')
+# model.to(device)
+
+# def set_seed(seed):
+#     random.seed(seed)
+#     np.random.seed(seed)
+#     torch.manual_seed(seed)
+#     if torch.cuda.is_available():
+#         torch.cuda.manual_seed_all(seed)
+
+# set_seed(42)
+
+# def prepare_image(image):
+#     return np.array(image)
+
+# def classify_image(image):
+#     image = image.to(device)
+#     results = model(image)
+#     return results
+
+# def detect_weld(image: Image.Image):
+#     open_cv_image = np.array(image)
+#     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2GRAY)
+#     _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
+#     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#     if contours:
+#         contour = max(contours, key=cv2.contourArea)
+#         x, y, w, h = cv2.boundingRect(contour)
+#         cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+#         cropped_image = open_cv_image[y:y + h, x:x + w]
+#         return cropped_image, open_cv_image
+#     else:
+#         return open_cv_image, open_cv_image
+
+# @app.post("/")
+# async def upload_files(files: List[UploadFile] = File(...)):
+#     results = []
+#     for file in files:
+#         contents = await file.read()
+#         image = Image.open(io.BytesIO(contents)).convert("RGB")
+#         cropped_image, annotated_image = detect_weld(image)
+#         prepared_image = prepare_image(cropped_image)
+#         result = classify_image(prepared_image)
+#         boxes = result.xyxy[0].cpu().numpy()
+#         labels = result.names
+#         annotated_labels = []
+#         for box in boxes:
+#             x1, y1, x2, y2, conf, cls_id = box
+#             label = labels[int(cls_id)]
+#             cv2.rectangle(annotated_image, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
+#             cv2.putText(annotated_image, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
+#             annotated_labels.append({
+#                 "class_id": int(cls_id),
+#                 "label": label,
+#                 "confidence": float(conf),
+#                 "bbox": [float(x1), float(y1), float(x2), float(y2)]
+#             })
+#         _, buffer = cv2.imencode('.jpg', annotated_image)
+#         annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
+#         results.append({"labels": annotated_labels, "annotated_image": annotated_image_encoded})
+#     return JSONResponse(content=results)
+
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
