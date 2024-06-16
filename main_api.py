@@ -469,96 +469,96 @@
 
 
 
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-import torch
-from PIL import Image
-import io
-import cv2
-import numpy as np
-import base64
-import uvicorn
-import random
-from typing import List
-from ultralytics import YOLO
+# from fastapi import FastAPI, File, UploadFile
+# from fastapi.responses import JSONResponse
+# from fastapi.middleware.cors import CORSMiddleware
+# import torch
+# from PIL import Image
+# import io
+# import cv2
+# import numpy as np
+# import base64
+# import uvicorn
+# import random
+# from typing import List
+# from ultralytics import YOLO
 
-# Инициализация FastAPI
-app = FastAPI()
+# # Инициализация FastAPI
+# app = FastAPI()
 
-# Настройка CORS (если необходимо)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# # Настройка CORS (если необходимо)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
-# Функция для установки всех seeds
-def set_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+# # Функция для установки всех seeds
+# def set_seed(seed):
+#     random.seed(seed)
+#     np.random.seed(seed)
+#     torch.manual_seed(seed)
+#     if torch.cuda.is_available():
+#         torch.cuda.manual_seed_all(seed)
 
-# Устанавливаем фиксированный seed
-set_seed(42)
+# # Устанавливаем фиксированный seed
+# set_seed(42)
 
-# Определение устройства
-device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
+# # Определение устройства
+# device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 
-# Загрузка обученной модели
-model = YOLO('modelTrained/best.pt')
-model.to(device)  # Перенос модели на устройство
+# # Загрузка обученной модели
+# model = YOLO('modelTrained/best.pt')
+# model.to(device)  # Перенос модели на устройство
 
-# Функция для подготовки изображения
-def prepare_image(image):
-    return np.array(image)
+# # Функция для подготовки изображения
+# def prepare_image(image):
+#     return np.array(image)
 
-# Функция для классификации изображений
-def classify_image(image):
-    image = image.to(device)  # Перенос изображения на устройство
-    results = model(image)
-    return results
+# # Функция для классификации изображений
+# def classify_image(image):
+#     image = image.to(device)  # Перенос изображения на устройство
+#     results = model(image)
+#     return results
 
-# Функция для выделения шва с помощью OpenCV
-def detect_weld(image: Image.Image):
-    open_cv_image = np.array(image)
-    gray = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2GRAY)
-    _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
-    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+# # Функция для выделения шва с помощью OpenCV
+# def detect_weld(image: Image.Image):
+#     open_cv_image = np.array(image)
+#     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2GRAY)
+#     _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
+#     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    if contours:
-        contour = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        cropped_image = open_cv_image[y:y + h, x:x + w]
-        return cropped_image, open_cv_image
-    else:
-        return open_cv_image, open_cv_image
+#     if contours:
+#         contour = max(contours, key=cv2.contourArea)
+#         x, y, w, h = cv2.boundingRect(contour)
+#         cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+#         cropped_image = open_cv_image[y:y + h, x:x + w]
+#         return cropped_image, open_cv_image
+#     else:
+#         return open_cv_image, open_cv_image
 
-@app.post("/")
-async def upload_files(files: List[UploadFile] = File(...)):
-    results = []
+# @app.post("/")
+# async def upload_files(files: List[UploadFile] = File(...)):
+#     results = []
 
-    for file in files:
-        contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
+#     for file in files:
+#         contents = await file.read()
+#         image = Image.open(io.BytesIO(contents)).convert("RGB")
         
-        cropped_image, annotated_image = detect_weld(image)
-        result = classify_image(cropped_image)
+#         cropped_image, annotated_image = detect_weld(image)
+#         result = classify_image(cropped_image)
         
-        _, buffer = cv2.imencode('.jpg', annotated_image)
-        annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
+#         _, buffer = cv2.imencode('.jpg', annotated_image)
+#         annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
         
-        results.append({"result": result, "annotated_image": annotated_image_encoded})
+#         results.append({"result": result, "annotated_image": annotated_image_encoded})
 
-    return JSONResponse(content=results)
+#     return JSONResponse(content=results)
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
 
@@ -578,13 +578,13 @@ if __name__ == "__main__":
 # import cv2
 # import numpy as np
 # import base64
-# import uvicorn
-# import random
 # from typing import List
 # from ultralytics import YOLO
 
+# # Инициализация FastAPI
 # app = FastAPI()
 
+# # Настройка CORS (если необходимо)
 # app.add_middleware(
 #     CORSMiddleware,
 #     allow_origins=["*"],
@@ -593,68 +593,260 @@ if __name__ == "__main__":
 #     allow_headers=["*"],
 # )
 
-# device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
+# # Определение устройства
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# # Загрузка обученной модели
 # model = YOLO('modelTrained/best.pt')
-# model.to(device)
+# model.to(device)  # Перенос модели на устройство
 
-# def set_seed(seed):
-#     random.seed(seed)
-#     np.random.seed(seed)
-#     torch.manual_seed(seed)
-#     if torch.cuda.is_available():
-#         torch.cuda.manual_seed_all(seed)
-
-# set_seed(42)
-
+# # Функция для подготовки изображения
 # def prepare_image(image):
 #     return np.array(image)
 
-# def classify_image(image):
-#     image = image.to(device)
-#     results = model(image)
-#     return results
-
-# def detect_weld(image: Image.Image):
-#     open_cv_image = np.array(image)
-#     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2GRAY)
-#     _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
-#     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#     if contours:
-#         contour = max(contours, key=cv2.contourArea)
-#         x, y, w, h = cv2.boundingRect(contour)
-#         cv2.rectangle(open_cv_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
-#         cropped_image = open_cv_image[y:y + h, x:x + w]
-#         return cropped_image, open_cv_image
-#     else:
-#         return open_cv_image, open_cv_image
+# # Функция для визуализации предсказаний
+# def visualize_predictions(image, results):
+#     for result in results:
+#         for box in result.boxes:
+#             x1, y1, x2, y2 = map(int, box.xyxy[0])
+#             label = result.names[int(box.cls)]
+#             confidence = box.conf[0]
+#             cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+#             cv2.putText(image, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+#     return image
 
 # @app.post("/")
 # async def upload_files(files: List[UploadFile] = File(...)):
 #     results = []
+
 #     for file in files:
 #         contents = await file.read()
 #         image = Image.open(io.BytesIO(contents)).convert("RGB")
-#         cropped_image, annotated_image = detect_weld(image)
-#         prepared_image = prepare_image(cropped_image)
-#         result = classify_image(prepared_image)
-#         boxes = result.xyxy[0].cpu().numpy()
-#         labels = result.names
-#         annotated_labels = []
-#         for box in boxes:
-#             x1, y1, x2, y2, conf, cls_id = box
-#             label = labels[int(cls_id)]
-#             cv2.rectangle(annotated_image, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
-#             cv2.putText(annotated_image, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
-#             annotated_labels.append({
-#                 "class_id": int(cls_id),
-#                 "label": label,
-#                 "confidence": float(conf),
-#                 "bbox": [float(x1), float(y1), float(x2), float(y2)]
-#             })
+        
+#         image_np = prepare_image(image)
+#         prediction_results = model.predict(image_np, save=False)
+
+#         annotated_image = visualize_predictions(image_np.copy(), prediction_results)
+
 #         _, buffer = cv2.imencode('.jpg', annotated_image)
 #         annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
-#         results.append({"labels": annotated_labels, "annotated_image": annotated_image_encoded})
+        
+#         # Формирование списка меток и координат для JSON ответа
+#         labels_and_boxes = []
+#         for result in prediction_results:
+#             for box in result.boxes:
+#                 labels_and_boxes.append({
+#                     "label": result.names[int(box.cls)],
+#                     "confidence": box.conf[0].item(),
+#                     "coordinates": [int(coord) for coord in box.xyxy[0]]
+#                 })
+
+#         results.append({
+#             "result": labels_and_boxes,
+#             "annotated_image": annotated_image_encoded
+#         })
+
+#     return JSONResponse(content=results)
+
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+#_____________________________________________________НОРМАЛЬНАЯ ВЕРСИЯ
+# from fastapi import FastAPI, File, UploadFile
+# from fastapi.responses import JSONResponse
+# from fastapi.middleware.cors import CORSMiddleware
+# import torch
+# import cv2
+# import numpy as np
+# import base64
+# import uvicorn
+# from ultralytics import YOLO
+# from typing import List
+# import io
+# from PIL import Image
+# import matplotlib.pyplot as plt
+
+
+# # Инициализация FastAPI
+# app = FastAPI()
+
+# # Настройка CORS (если необходимо)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+# # Загрузить модель YOLOv8
+# model_path = 'runs/detect/train12/weights/best.pt'  # Укажите путь к вашей обученной модели
+# model = YOLO(model_path)
+
+# # Словарь замены имен классов
+# class_name_mapping = {
+#     'adj': 'adj',  # пример замены, измените в соответствии с вашими классами
+#     'int': 'Дефекты целостности',  # пример замены, измените в соответствии с вашими классами
+#     'geo': 'Дефекты геометрии',      # пример замены, измените в соответствии с вашими классами
+#     'pro': 'Дефекты постобработки',  # пример замены, измените в соответствии с вашими классами
+#     'non': 'Дефекты невыполнения'  # пример замены, измените в соответствии с вашими классами
+# }
+
+# # Функция для рисования меток на изображении
+# def plot_boxes(results, class_name_mapping):
+#     img = results.orig_img
+#     boxes = results.boxes.xyxy
+#     scores = results.boxes.conf
+#     classes = results.boxes.cls
+
+#     for box, score, cls in zip(boxes, scores, classes):
+#         label = class_name_mapping.get(model.names[int(cls)], 'unknown')
+#         color = (0, 255, 0)  # Зеленый цвет для меток
+#         x1, y1, x2, y2 = map(int, box)
+#         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+#         cv2.putText(img, f'{label} {score:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+
+#     return img
+
+# @app.post("/")
+# async def upload_files(files: List[UploadFile] = File(...)):
+#     results = []
+
+#     for file in files:
+#         contents = await file.read()
+#         image = Image.open(io.BytesIO(contents)).convert("RGB")
+#         image_np = np.array(image)
+
+#         # Обработать изображение
+#         results_yolo = model(image_np)
+
+#         # Визуализация меток на изображении
+#         annotated_image = plot_boxes(results_yolo[0], class_name_mapping)
+
+#         # Кодирование изображения в base64 для ответа
+#         _, buffer = cv2.imencode('.jpg', annotated_image)
+#         annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
+
+#         # Словарь с результатами
+#         result = {
+#             "boxes": results_yolo[0].boxes.xyxy.tolist(),
+#             "scores": results_yolo[0].boxes.conf.tolist(),
+#             "classes": [class_name_mapping.get(model.names[int(cls)], 'unknown') for cls in results_yolo[0].boxes.cls],
+#             "annotated_image": annotated_image_encoded
+#         }
+
+#         results.append(result)
+
 #     return JSONResponse(content=results)
 
 # if __name__ == "__main__":
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+#________________________________________________РАБОЧАЯ
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+import torch
+import cv2
+import numpy as np
+import base64
+import uvicorn
+from ultralytics import YOLO
+from typing import List
+import io
+from PIL import Image, ImageDraw, ImageFont
+
+# Инициализация FastAPI
+app = FastAPI()
+
+# Настройка CORS (если необходимо)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Загрузить модель YOLOv8
+model_path = 'runs/detect/train12/weights/best.pt'  # Укажите путь к вашей обученной модели
+model = YOLO(model_path)
+
+# Словарь замены имен классов
+class_name_mapping = {
+    'adj': 'Прилегающие дефекты',
+    'int': 'Дефекты целостности',
+    'geo': 'Дефекты геометрии',
+    'pro': 'Дефекты постобработки',
+    'non': 'Дефекты невыполнения'
+}
+
+# Функция для рисования меток на изображении
+def plot_boxes(results, class_name_mapping):
+    img = results.orig_img
+    boxes = results.boxes.xyxy
+    scores = results.boxes.conf
+    classes = results.boxes.cls
+
+    # Конвертируем изображение в PIL формат для поддержки кириллицы
+    img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(img_pil)
+
+    # Загрузка шрифта, поддерживающего кириллицу
+    font_path = '/System/Library/Fonts/Supplemental/Arial Unicode.ttf'  # Укажите путь к шрифту, поддерживающему кириллицу
+    font = ImageFont.truetype(font_path, 20)
+
+    for box, score, cls in zip(boxes, scores, classes):
+        label = class_name_mapping.get(model.names[int(cls)], 'unknown')
+        color = (0, 255, 0)  # Зеленый цвет для меток
+        x1, y1, x2, y2 = map(int, box)
+
+        # Рисуем прямоугольник и текст на изображении
+        draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
+        draw.text((x1, y1 - 25), f'{label} {score:.2f}', font=font, fill=color)
+
+    # Конвертируем изображение обратно в формат OpenCV
+    img = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
+    return img
+
+@app.post("/")
+async def upload_files(files: List[UploadFile] = File(...)):
+    results = []
+
+    for file in files:
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        image_np = np.array(image)
+
+        # Обработать изображение
+        results_yolo = model(image_np)
+
+        # Визуализация меток на изображении
+        annotated_image = plot_boxes(results_yolo[0], class_name_mapping)
+
+        # Кодирование изображения в base64 для ответа
+        _, buffer = cv2.imencode('.jpg', annotated_image)
+        annotated_image_encoded = base64.b64encode(buffer).decode('utf-8')
+
+        # Словарь с результатами
+        result = {
+            "boxes": results_yolo[0].boxes.xyxy.tolist(),
+            "scores": results_yolo[0].boxes.conf.tolist(),
+            "classes": [class_name_mapping.get(model.names[int(cls)], 'unknown') for cls in results_yolo[0].boxes.cls],
+            "annotated_image": annotated_image_encoded
+        }
+
+        results.append(result)
+
+    return JSONResponse(content=results)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+

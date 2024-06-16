@@ -17,7 +17,8 @@
         }
         .container {
             text-align: center;
-            width: 400px;
+            width: 90%; /* Изменим ширину контейнера на 90% от ширины экрана */
+            max-width: 800px; /* Максимальная ширина контейнера, чтобы сохранить центрирование */
             padding: 40px;
             background-color: #fff;
             border-radius: 10px;
@@ -76,13 +77,14 @@
             display: none; /* Скрыть элемент с процентом загрузки */
         }
         #annotated-image {
-            max-width: 100%;
+            width: 100%; /* Изменение ширины изображения */
+            max-width: 100%; /* Максимальная ширина изображения */
             height: auto;
             margin-top: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             transition: opacity 0.5s;
-            object-fit: cover;
+            object-fit: contain; /* Увеличение объекта, чтобы содержать, но не увеличивать */
         }
         #annotated-image.hide {
             opacity: 0;
@@ -115,6 +117,13 @@
         .github-icon img {
             vertical-align: middle;
             width: 40px; /* Увеличил размер иконки */
+        }
+
+        /* Медиа-запросы для адаптивности */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -133,7 +142,7 @@
             <div class="github-icon">
                 <img src="github-mark.svg" alt="GitHub логотип">
             </div>
-            <a href="ССЫЛКА_НА_GITHUB" class="github-btn">GitHub</a>
+            <a href="https://github.com/Eazyan/Weld_classification" class="github-btn">GitHub</a>
         </div>
     </div>
 
@@ -142,195 +151,7 @@
             event.preventDefault();
             const fileInput = document.getElementById('file-input');
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            try {
-                const response = await fetch('http://0.0.0.0:8000/', {
-                    method: 'POST',
-                    body: formData,
-                    // Добавляем отслеживание прогресса загрузки
-                    onUploadProgress: progressEvent => {
-                        const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-                        document.getElementById('progress-value').textContent = `${progress}%`;
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                document.getElementById('result').textContent = `Результат: ${result.result}`;
-                if (result.annotated_image) {
-                    const imgElement = document.getElementById('annotated-image');
-                    imgElement.src = `data:image/jpeg;base64,${result.annotated_image}`;
-                    imgElement.classList.remove('hide');
-                }
-            } catch (error) {
-                document.getElementById('result').textContent = `Ошибка: ${error.message}`;
-            }
-        });
-    </script>
-</body>
-</html>
-
-
-
-
-
-
-<!-- 
-
-
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Классификация сварных швов</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            text-align: center;
-            width: 400px;
-            padding: 40px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-        }
-        h1, h2 {
-            margin: 0 0 20px;
-            color: #333;
-        }
-        h1 {
-            font-size: 2em;
-        }
-        h2 {
-            font-size: 1.5em;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        input[type="file"] {
-            display: none;
-        }
-        label {
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-bottom: 20px;
-            font-size: 1.2em;
-        }
-        label:hover {
-            background-color: #0056b3;
-        }
-        button[type="submit"] {
-            background-color: #28a745;
-            color: #fff;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            font-size: 1.2em;
-        }
-        button[type="submit"]:hover {
-            background-color: #218838;
-        }
-        #result {
-            font-size: 1.2em;
-            margin-top: 20px;
-        }
-        #progress {
-            margin-top: 20px;
-            display: none; /* Скрыть элемент с процентом загрузки */
-        }
-        #annotated-image {
-            max-width: 100%;
-            height: auto;
-            margin-top: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            transition: opacity 0.5s;
-            object-fit: cover;
-        }
-        #annotated-image.hide {
-            opacity: 0;
-        }
-        .github-btn-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .github-btn {
-            background-color: #333;
-            color: #fff;
-            padding: 10px 40px; /* Увеличил размер кнопки */
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s;
-            font-size: 1.2em;
-            margin-left: 10px;
-        }
-        .github-btn:hover {
-            background-color: #000;
-        }
-        .github-icon {
-            background-color: white;
-            padding: 5px;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        .github-icon img {
-            vertical-align: middle;
-            width: 40px; /* Увеличил размер иконки */
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Классификация сварных швов</h1>
-        <form id="upload-form" enctype="multipart/form-data">
-            <label for="file-input">Выберите папку с изображениями</label>
-            <input type="file" id="file-input" name="file" accept="image/*" webkitdirectory multiple>
-            <button type="submit">Анализировать</button>
-        </form>
-        <div id="result"></div>
-        <div id="progress">Прогресс загрузки: <span id="progress-value">0%</span></div>
-        <div id="images-container"></div>
-        <div class="github-btn-container">
-            <div class="github-icon">
-                <img src="github-mark.svg" alt="GitHub логотип">
-            </div>
-            <a href="ССЫЛКА_НА_GITHUB" class="github-btn">GitHub</a>
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('upload-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const fileInput = document.getElementById('file-input');
-            const files = fileInput.files;
-            const formData = new FormData();
-
-            for (let i = 0; i < files.length; i++) {
-                formData.append('files', files[i]);
-            }
+            formData.append('files', fileInput.files[0]);  // Изменено 'file' на 'files'
 
             try {
                 const response = await fetch('http://0.0.0.0:8000/', {
@@ -342,63 +163,17 @@
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
 
-                const results = await response.json();
-                document.getElementById('result').innerHTML = '';
-                document.getElementById('images-container').innerHTML = '';
-
-                results.forEach(result => {
-                    const imgElement = document.createElement('img');
-                    imgElement.src = `data:image/jpeg;base64,${result.annotated_image}`;
-                    imgElement.alt = result.result;
-                    imgElement.style.maxWidth = '100%';
-                    imgElement.style.height = 'auto';
-                    imgElement.style.marginTop = '20px';
-                    document.getElementById('images-container').appendChild(imgElement);
-
-                    const textElement = document.createElement('div');
-                    textElement.textContent = `Результат: ${result.result}`;
-                    document.getElementById('result').appendChild(textElement);
-                });
+                const result = await response.json();
+                document.getElementById('result').textContent = `Результат: ${result[0].classes.join(', ')}`;
+                if (result[0].annotated_image) {
+                    const imgElement = document.getElementById('annotated-image');
+                    imgElement.src = `data:image/jpeg;base64,${result[0].annotated_image}`;
+                    imgElement.classList.remove('hide');
+                }
             } catch (error) {
                 document.getElementById('result').textContent = `Ошибка: ${error.message}`;
             }
         });
     </script>
 </body>
-</html> -->
-
-
-
-
-
-
-
-
-
-
-<!-- <!DOCTYPE html>
-<html>
-<head>
-    <title>Upload Weld Images</title>
-</head>
-<body>
-    <h1>Upload Weld Images</h1>
-    <form id="upload-form" enctype="multipart/form-data">
-        <input type="file" name="files" multiple>
-        <button type="button" onclick="uploadFiles()">Upload</button>
-    </form>
-    <div id="results"></div>
-    <script>
-        async function uploadFiles() {
-            const form = document.getElementById('upload-form');
-            const formData = new FormData(form);
-            const response = await fetch('http://localhost:8000/', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-            document.getElementById('results').innerText = JSON.stringify(result, null, 2);
-        }
-    </script>
-</body>
-</html> -->
+</html>
